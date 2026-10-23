@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Интерактивный тренажер: Час пик в отеле 12:00–14:00</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
+
+    .trainer-card {
+      width: 100%;
+      max-width: 920px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Шапка тренажера */
+    .trainer-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #48AF45;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .header-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* Индикатор готовности отеля */
+    .hotel-readiness {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #ffffff;
+      padding: 8px 16px;
+      border-radius: 30px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .readiness-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .readiness-bar-bg {
+      width: 110px;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .readiness-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #48AF45;
+      border-radius: 5px;
+      transition: width 0.4s ease;
+    }
+
+    /* Главная интерактивная зона */
+    .trainer-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Карта этажа (номера отеля) */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .room-badge {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .room-badge:hover {
+      border-color: #94a3b8;
+    }
+
+    .room-badge.active {
+      border-color: #48AF45;
+      background: #f0fdf4;
+      box-shadow: 0 4px 12px rgba(72, 175, 69, 0.2);
+    }
+
+    .room-badge.ready {
+      border-color: #48AF45;
+      background: #ffffff;
+    }
+
+    .room-badge.ready::after {
+      content: "✓";
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 20px;
+      height: 20px;
+      background: #48AF45;
+      color: #ffffff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .room-badge.error {
+      border-color: #ef4444;
+      background: #fff5f5;
+    }
+
+    .room-badge.error::after {
+      content: "!";
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 20px;
+      height: 20px;
+      background: #ef4444;
+      color: #ffffff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .room-num {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .room-status-label {
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-dirty {
+      color: #dc2626;
+    }
+
+    .status-checked {
+      color: #48AF45;
+    }
+
+    .status-attention {
+      color: #b91c1c;
+    }
+
+    /* Блок вопроса и ситуации */
+    .situation-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 250px;
+    }
+
+    .situation-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+
+    .situation-room-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .situation-tag {
+      font-size: 12px;
+      background: #e2e8f0;
+      color: #475569;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .situation-desc {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #334155;
+    }
+
+    .situation-question {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Варианты ответов */
+    .answers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .answer-btn {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      color: #1e293b;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-family: inherit;
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      border-color: #48AF45;
+      background: #f0fdf4;
+    }
+
+    .answer-marker {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .answer-btn.correct {
+      border-color: #48AF45;
+      background: #ecfdf5;
+      color: #166534;
+      font-weight: 600;
+    }
+
+    .answer-btn.correct .answer-marker {
+      background: #48AF45;
+      border-color: #48AF45;
+      color: #ffffff;
+    }
+
+    .answer-btn.wrong {
+      border-color: #ef4444;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .answer-btn.wrong .answer-marker {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    /* Пояснение к ответу */
+    .feedback-box {
+      margin-top: 8px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.45;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .feedback-box.correct {
+      display: block;
+      background: #ecfdf5;
+      border-left: 4px solid #48AF45;
+      color: #166534;
+    }
+
+    .feedback-box.wrong {
+      display: block;
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Экран итогов проверки */
+    .results-card {
+      display: none;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 28px 24px;
+      text-align: center;
+      animation: fadeIn 0.35s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .results-card.visible {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .results-icon-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .results-icon-circle.success {
+      background: #ecfdf5;
+      color: #48AF45;
+    }
+
+    .results-icon-circle.warning {
+      background: #fff7ed;
+      color: #ea580c;
+    }
+
+    .results-icon-circle svg {
+      width: 36px;
+      height: 36px;
+      fill: currentColor;
+    }
+
+    .results-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .results-score-badge {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .results-desc {
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.55;
+      max-width: 620px;
+    }
+
+    .results-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Нижняя панель */
+    .trainer-footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .btn-primary {
+      background: #48AF45;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #3e9b3b;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 640px) {
+      .rooms-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .trainer-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .hotel-readiness {
+        justify-content: space-between;
+      }
+      .readiness-bar-bg {
+        flex-grow: 1;
+      }
+      .results-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .results-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="trainer-card">
+
+  <!-- Шапка -->
+  <div class="trainer-header">
+    <div class="header-title-box">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Час пик: с 12:00 до 14:00 в отеле</div>
+        <div class="header-subtitle">Помогите службам отеля подготовить и проверить номера к заезду</div>
+      </div>
+    </div>
+
+    <div class="hotel-readiness">
+      <span class="readiness-text" id="readinessText">Готовность: 0%</span>
+      <div class="readiness-bar-bg">
+        <div class="readiness-bar-fill" id="readinessBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Тело с номерами -->
+  <div class="trainer-body">
+    <!-- Сетка номеров -->
+    <div class="rooms-grid">
+      <div class="room-badge active" data-index="0" id="badge0">
+        <div class="room-num">№ 101</div>
+        <div class="room-status-label status-dirty" id="status0">Грязно</div>
+      </div>
+      <div class="room-badge" data-index="1" id="badge1">
+        <div class="room-num">№ 102</div>
+        <div class="room-status-label status-dirty" id="status1">Грязно</div>
+      </div>
+      <div class="room-badge" data-index="2" id="badge2">
+        <div class="room-num">№ 103</div>
+        <div class="room-status-label status-dirty" id="status2">Грязно</div>
+      </div>
+      <div class="room-badge" data-index="3" id="badge3">
+        <div class="room-num">№ 104</div>
+        <div class="room-status-label status-dirty" id="status3">Грязно</div>
+      </div>
+      <div class="room-badge" data-index="4" id="badge4">
+        <div class="room-num">№ 105</div>
+        <div class="room-status-label status-dirty" id="status4">Грязно</div>
+      </div>
+    </div>
+
+    <!-- Карточка ситуации -->
+    <div class="situation-card" id="situationCard">
+      <div class="situation-meta">
+        <div class="situation-room-title" id="sitRoomTitle">Номер 101: Выезд и новый заезд</div>
+        <div class="situation-tag" id="sitTag">Виды уборок</div>
+      </div>
+
+      <div class="situation-desc" id="sitDesc"></div>
+      <div class="situation-question" id="sitQuestion"></div>
+
+      <div class="answers-list" id="answersList"></div>
+      <div class="feedback-box" id="feedbackBox"></div>
+    </div>
+
+    <!-- Экран итогов смены -->
+    <div class="results-card" id="resultsCard">
+      <div class="results-icon-circle success" id="resultsIcon">
+        <svg viewBox="0 0 24 24">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+      </div>
+      <div class="results-title" id="resultsTitle">Итоги проверки номерного фонда</div>
+      <div class="results-score-badge" id="resultsScoreBadge">Готовность: 5 из 5 номеров</div>
+      <div class="results-desc" id="resultsDesc">
+        Отличная работа! Все 5 номеров успешно убраны, проверены и готовы к заселению точно в срок до 14:00.
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-secondary" id="btnReviewErrors" style="display: none;">Вернуться к номерам с ошибками</button>
+        <button class="btn btn-primary" id="btnRestartResults">Пройти заново</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Футер -->
+  <div class="trainer-footer" id="trainerFooter">
+    <button class="btn btn-secondary" id="btnPrev" disabled>Назад</button>
+    <button class="btn btn-primary" id="btnNext">Следующий номер</button>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const cases = [
+    {
+      roomNum: "101",
+      title: "Номер 101: Выезд и новый заезд",
+      tag: "Виды уборок",
+      desc: "В 12:05 гость освободил номер 101, а в 14:00 ожидается заселение новых гостей. Супервайзеру нужно подготовить комнату к встрече гостя.",
+      question: "Какой вид уборки назначается автоматически в модуле после выселения?",
+      answers: [
+        { text: "Выездная уборка — чтобы подготовить комнату к следующему заезду.", correct: true },
+        { text: "Текущая уборка — она назначается на все номера каждый день.", correct: false },
+        { text: "Внеплановая уборка — ее супервайзер каждый раз создает вручную.", correct: false }
+      ],
+      feedback: "Верно! Выездная уборка назначается автоматически при выезде гостя. Фильтр «Выезд и заезд» помогает сразу выделить такие номера для первоочередной подготовки."
+    },
+    {
+      roomNum: "102",
+      title: "Номер 102: Табличка «Не беспокоить»",
+      tag: "Отказ от уборки",
+      desc: "В номере 102 проживает гость. На сегодня была запланирована текущая уборка со сменой постельного белья, но гость повесил табличку «Не беспокоить» и отказался от уборки.",
+      question: "Горничная отметила в TL Extranet отказ от уборки. Что произойдет в системе?",
+      answers: [
+        { text: "Номер останется в состоянии «Грязно», а смена белья автоматически перенесется на завтра.", correct: true },
+        { text: "Номер сразу перейдет в статус «Проверено», так как убирать ничего не нужно.", correct: false },
+        { text: "Смена белья аннулируется, и ее придется настраивать заново вручную.", correct: false }
+      ],
+      feedback: "Точно! Номер сохраняет состояние «Грязно», а смена белья автоматически сдвигается на следующий день проживания."
+    },
+    {
+      roomNum: "103",
+      title: "Номер 103: Гость передумал",
+      tag: "Права доступа",
+      desc: "Гость из номера 103 сначала отказался от уборки, но через час позвонил администратору и попросил все-таки навести порядок.",
+      question: "Кто из сотрудников может вернуть отмененную уборку в статус «Требует выполнения»?",
+      answers: [
+        { text: "Администратор СПиР или супервайзер (горничной это действие недоступно).", correct: true },
+        { text: "Сама горничная в своем мобильном приложении.", correct: false },
+        { text: "Только управляющий отелем через настройки модуля.", correct: false }
+      ],
+      feedback: "Абсолютно верно! Горничная не может самостоятельно вернуть отклоненную уборку. Это делает администратор на ресепшене или супервайзер."
+    },
+    {
+      roomNum: "104",
+      title: "Номер 104: Пролитый кофе",
+      tag: "Несколько уборок",
+      desc: "В номере 104 горничная выполнила текущую уборку. Однако ранее гость обратился с просьбой убрать пролитый кофе, и супервайзер добавил внеплановую уборку, которая еще выполняется.",
+      question: "В каком состоянии будет номер на шахматке прямо сейчас?",
+      answers: [
+        { text: "В состоянии «Грязно», пока все назначенные уборки не будут выполнены и проверены.", correct: true },
+        { text: "В состоянии «Проверено», так как плановая текущая уборка уже завершена.", correct: false },
+        { text: "В состоянии «Ремонт» до окончания смены.", correct: false }
+      ],
+      feedback: "Верно! Состояние номера зависит от ВСЕХ назначенных задач. Пока внеплановая уборка не закрыта и не проверена, номер остается «Грязно»."
+    },
+    {
+      roomNum: "105",
+      title: "Номер 105: Подготовка к заезду с ребенком",
+      tag: "Заметки бронирования",
+      desc: "В карте бронирования администратор указал детскую кроватку в поле «Заметки для хаускипинга».",
+      question: "Как горничная узнает об этой просьбе без звонков и бумажных записок?",
+      answers: [
+        { text: "Сведения и значки особенностей размещения отображаются прямо в ее задании в TL Extranet.", correct: true },
+        { text: "Администратор должен отправить сообщение в общий рабочий чат.", correct: false },
+        { text: "Горничная узнает об этом только при личном обходе супервайзера.", correct: false }
+      ],
+      feedback: "Именно так! Заметки и иконки подготовки отображаются прямо в задании горничной. Она берет все необходимое до начала уборки."
+    }
+  ];
+
+  let currentIndex = 0;
+  const answeredCases = {};
+
+  const sitRoomTitle = document.getElementById('sitRoomTitle');
+  const sitTag = document.getElementById('sitTag');
+  const sitDesc = document.getElementById('sitDesc');
+  const sitQuestion = document.getElementById('sitQuestion');
+  const answersList = document.getElementById('answersList');
+  const feedbackBox = document.getElementById('feedbackBox');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const readinessText = document.getElementById('readinessText');
+  const readinessBar = document.getElementById('readinessBar');
+  const situationCard = document.getElementById('situationCard');
+  const resultsCard = document.getElementById('resultsCard');
+  const resultsIcon = document.getElementById('resultsIcon');
+  const resultsTitle = document.getElementById('resultsTitle');
+  const resultsScoreBadge = document.getElementById('resultsScoreBadge');
+  const resultsDesc = document.getElementById('resultsDesc');
+  const btnReviewErrors = document.getElementById('btnReviewErrors');
+  const btnRestartResults = document.getElementById('btnRestartResults');
+  const trainerFooter = document.getElementById('trainerFooter');
+
+  function renderCase(idx) {
+    currentIndex = idx;
+    const c = cases[idx];
+
+    // Показываем карточку ситуации, скрываем результаты
+    situationCard.style.display = 'flex';
+    resultsCard.classList.remove('visible');
+    trainerFooter.style.display = 'flex';
+
+    // Активный бейдж
+    for (let i = 0; i < cases.length; i++) {
+      const b = document.getElementById('badge' + i);
+      b.classList.toggle('active', i === idx);
+    }
+
+    sitRoomTitle.textContent = c.title;
+    sitTag.textContent = c.tag;
+    sitDesc.textContent = c.desc;
+    sitQuestion.textContent = c.question;
+
+    answersList.innerHTML = '';
+    feedbackBox.className = 'feedback-box';
+    feedbackBox.style.display = 'none';
+
+    const isAnswered = answeredCases[idx] !== undefined;
+
+    c.answers.forEach((ans, aIdx) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.disabled = isAnswered;
+
+      const marker = document.createElement('div');
+      marker.className = 'answer-marker';
+      marker.textContent = String.fromCharCode(65 + aIdx);
+
+      const txt = document.createElement('div');
+      txt.textContent = ans.text;
+
+      btn.appendChild(marker);
+      btn.appendChild(txt);
+
+      if (isAnswered) {
+        if (ans.correct) {
+          btn.classList.add('correct');
+        } else if (answeredCases[idx] === aIdx) {
+          btn.classList.add('wrong');
+        }
+      } else {
+        btn.addEventListener('click', () => handleAnswer(aIdx));
+      }
+
+      answersList.appendChild(btn);
+    });
+
+    if (isAnswered) {
+      showFeedback(answeredCases[idx]);
+    }
+
+    btnPrev.disabled = (idx === 0);
+    btnNext.textContent = (idx === cases.length - 1) ? 'Завершить проверку' : 'Следующий номер';
+  }
+
+  function handleAnswer(aIdx) {
+    answeredCases[currentIndex] = aIdx;
+    const c = cases[currentIndex];
+    const isCorrect = c.answers[aIdx].correct;
+
+    const badge = document.getElementById('badge' + currentIndex);
+    const statusEl = document.getElementById('status' + currentIndex);
+
+    badge.classList.remove('ready', 'error');
+
+    if (isCorrect) {
+      statusEl.textContent = 'Проверено';
+      statusEl.className = 'room-status-label status-checked';
+      badge.classList.add('ready');
+    } else {
+      statusEl.textContent = 'Ошибка';
+      statusEl.className = 'room-status-label status-attention';
+      badge.classList.add('error');
+    }
+
+    updateReadinessUI();
+    renderCase(currentIndex);
+  }
+
+  function showFeedback(aIdx) {
+    const c = cases[currentIndex];
+    const isCorrect = c.answers[aIdx].correct;
+
+    feedbackBox.textContent = isCorrect ? c.feedback : 'Не совсем так. Ознакомьтесь с правилами модуля хаускипинга в подсказке и учтите их при сдаче смены.';
+    feedbackBox.className = 'feedback-box ' + (isCorrect ? 'correct' : 'wrong');
+    feedbackBox.style.display = 'block';
+  }
+
+  function getStats() {
+    let correctCount = 0;
+    let answeredCount = 0;
+    let firstErrorIndex = -1;
+
+    for (let i = 0; i < cases.length; i++) {
+      if (answeredCases[i] !== undefined) {
+        answeredCount++;
+        if (cases[i].answers[answeredCases[i]].correct) {
+          correctCount++;
+        } else if (firstErrorIndex === -1) {
+          firstErrorIndex = i;
+        }
+      } else if (firstErrorIndex === -1) {
+        firstErrorIndex = i;
+      }
+    }
+    return { correctCount, answeredCount, firstErrorIndex };
+  }
+
+  function updateReadinessUI() {
+    const { correctCount } = getStats();
+    const percent = Math.round((correctCount / cases.length) * 100);
+    readinessText.textContent = `Готовность: ${percent}%`;
+    readinessBar.style.width = `${percent}%`;
+  }
+
+  // Всегда открываем экран итогов сдачи смены
+  function showResultsScreen() {
+    const { correctCount, answeredCount, firstErrorIndex } = getStats();
+
+    situationCard.style.display = 'none';
+    trainerFooter.style.display = 'none';
+    resultsCard.classList.add('visible');
+
+    // Снимаем подсветку активного номера в сетке
+    for (let i = 0; i < cases.length; i++) {
+      document.getElementById('badge' + i).classList.remove('active');
+    }
+
+    if (correctCount === cases.length) {
+      resultsIcon.className = 'results-icon-circle success';
+      resultsIcon.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+      `;
+      resultsTitle.textContent = 'Все номера проверены и готовы к заселению!';
+      resultsScoreBadge.textContent = `Готовность: 5 из 5 номеров (100%)`;
+      resultsDesc.textContent = 'Отличная работа! Вы решили все практические кейсы часа пик: распределили выездную и текущую уборку, разобрались с переносом смены белья при отказе гостя, правами возврата задач и статусами на шахматке.';
+      btnReviewErrors.style.display = 'none';
+    } else {
+      resultsIcon.className = 'results-icon-circle warning';
+      resultsIcon.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+      `;
+      resultsTitle.textContent = 'Проверка завершена, но есть замечания';
+      resultsScoreBadge.textContent = `Готовность: ${correctCount} из ${cases.length} номеров`;
+      resultsDesc.textContent = `К заселению готово ${correctCount} из ${cases.length} комнат. Часть номеров осталась в статусе «Грязно» или с ошибками в регламенте. Вы можете вернуться к проблемным номерам и исправить ответы.`;
+
+      btnReviewErrors.style.display = 'inline-flex';
+      btnReviewErrors.onclick = () => {
+        renderCase(firstErrorIndex >= 0 ? firstErrorIndex : 0);
+      };
+    }
+  }
+
+  function resetAll() {
+    for (let k in answeredCases) delete answeredCases[k];
+    for (let i = 0; i < cases.length; i++) {
+      const statusEl = document.getElementById('status' + i);
+      statusEl.textContent = 'Грязно';
+      statusEl.className = 'room-status-label status-dirty';
+      document.getElementById('badge' + i).classList.remove('ready', 'error');
+    }
+    updateReadinessUI();
+    renderCase(0);
+  }
+
+  // Клик по бейджам номеров в верхней панели
+  for (let i = 0; i < cases.length; i++) {
+    document.getElementById('badge' + i).addEventListener('click', () => {
+      renderCase(i);
+    });
+  }
+
+  btnPrev.addEventListener('click', () => {
+    if (currentIndex > 0) renderCase(currentIndex - 1);
+  });
+
+  // Нажатие на "Следующий номер" или "Завершить проверку"
+  btnNext.addEventListener('click', () => {
+    if (currentIndex < cases.length - 1) {
+      renderCase(currentIndex + 1);
+    } else {
+      showResultsScreen();
+    }
+  });
+
+  btnRestartResults.addEventListener('click', resetAll);
+
+  // Запуск с первого номера
+  renderCase(0);
+})();
+</script>
+
+</body>
+</html>
